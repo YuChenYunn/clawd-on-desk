@@ -404,6 +404,20 @@ function stopMonitorForAgent(agentId) {
   else if (agentId === "gemini-cli" && _geminiMonitor) _geminiMonitor.stop();
 }
 
+function safeConsoleError(...args) {
+  try {
+    console.error(...args);
+  } catch (err) {
+    if (err && (err.code === "EIO" || /EIO/.test(String(err.message || "")))) {
+      return;
+    }
+    try {
+      const line = `${new Date().toISOString()} ${args.map((x) => String(x)).join(" ")}\n`;
+      fs.appendFileSync(path.join(app.getPath("userData"), "clawd-main.log"), line);
+    } catch {}
+  }
+}
+
 // ── Theme loader ──
 const themeLoader = require("./theme-loader");
 const { isPlainObject: _isPlainObject } = themeLoader;
@@ -3332,7 +3346,7 @@ function createWindow() {
 
     // Crash recovery for hitWin
     hitWin.webContents.on("render-process-gone", (_event, details) => {
-      console.error("hitWin renderer crashed:", details.reason);
+      safeConsoleError("hitWin renderer crashed:", details.reason);
       hitWin.webContents.reload();
     });
   }
@@ -3440,7 +3454,7 @@ function createWindow() {
 
   // ── Crash recovery: renderer process can die from <object> churn ──
   win.webContents.on("render-process-gone", (_event, details) => {
-    console.error("Renderer crashed:", details.reason);
+    safeConsoleError("Renderer crashed:", details.reason);
     dragLocked = false;
     idlePaused = false;
     mouseOverPet = false;
