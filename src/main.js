@@ -408,9 +408,6 @@ function safeConsoleError(...args) {
   try {
     console.error(...args);
   } catch (err) {
-    if (err && (err.code === "EIO" || /EIO/.test(String(err.message || "")))) {
-      return;
-    }
     try {
       const line = `${new Date().toISOString()} ${args.map((x) => String(x)).join(" ")}\n`;
       fs.appendFileSync(path.join(app.getPath("userData"), "clawd-main.log"), line);
